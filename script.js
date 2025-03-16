@@ -1,6 +1,6 @@
 let db;
 
-// 📌 Функция инициализации базы данных IndexedDB
+// 📌 Функция инициализации IndexedDB
 function initDB(callback) {
     const request = indexedDB.open("photoGalleryDB", 1);
 
@@ -21,42 +21,32 @@ function initDB(callback) {
     };
 }
 
-// 📌 Функция сохранения фото в базу
+// 📌 Сохранение фото в базу
 function savePhoto(year, photo) {
-    if (!db) {
-        console.error("DB not ready");
-        return;
-    }
+    if (!db) return;
 
     const transaction = db.transaction("photos", "readwrite");
     const store = transaction.objectStore("photos");
-    store.add({ year: year, photo: photo });
+    store.add({ year: year, photo: photo, comments: [] });
 }
 
-// 📌 Функция загрузки фото из IndexedDB
+// 📌 Загрузка фото из базы
 function loadPhotos(year, callback) {
-    if (!db) {
-        console.error("DB not ready");
-        return;
-    }
+    if (!db) return;
 
     const transaction = db.transaction("photos", "readonly");
     const store = transaction.objectStore("photos");
     const request = store.getAll();
 
     request.onsuccess = function () {
-        const photos = request.result.filter(p => p.year === year).map(p => p.photo);
+        const photos = request.result.filter(p => p.year === year);
         callback(photos);
     };
 }
 
-// 📌 Отображение галереи с фото
+// 📌 Отображение галереи
 function showGallery(year) {
-    if (!db) {
-        console.error("DB not ready, retrying...");
-        setTimeout(() => showGallery(year), 500);
-        return;
-    }
+    if (!db) return;
 
     const container = document.getElementById("gallery-container");
     container.innerHTML = `<h2>Фото зустрічі ${year} року</h2><div class="gallery"></div>`;
@@ -64,18 +54,62 @@ function showGallery(year) {
     const galleryDiv = container.querySelector(".gallery");
 
     loadPhotos(year, function (photos) {
-        galleryDiv.innerHTML = ""; // Очистить галерею перед загрузкой фото
-        photos.forEach((src, index) => {
+        galleryDiv.innerHTML = "";
+        photos.forEach((photoData, index) => {
             const img = document.createElement("img");
-            img.src = src;
+            img.src = photoData.photo;
             img.alt = `Фото ${index + 1}`;
-            img.onclick = () => addComment(img, year, index);
+            img.onclick = () => openModal(photoData, year);
             galleryDiv.appendChild(img);
         });
     });
 }
 
-// 📌 Функция массовой загрузки фото
+// 📌 Открытие модального окна с фото и комментариями
+function openModal(photoData, year) {
+    const modal = document.getElementById("photo-modal");
+    const modalImg = document.getElementById("modal-img");
+    const commentList = document.getElementById("comment-list");
+    const commentInput = document.getElementById("comment-input");
+
+    modal.style.display = "block";
+    modalImg.src = photoData.photo;
+
+    // Отображаем существующие комментарии
+    commentList.innerHTML = "";
+    photoData.comments.forEach(comment => {
+        const li = document.createElement("li");
+        li.textContent = comment;
+        commentList.appendChild(li);
+    });
+
+    // Добавление нового комментария
+    document.getElementById("add-comment-btn").onclick = function () {
+        const newComment = commentInput.value.trim();
+        if (newComment) {
+            photoData.comments.push(newComment);
+            saveUpdatedPhoto(photoData, year);
+            showGallery(year);
+            commentInput.value = "";
+            openModal(photoData, year);
+        }
+    };
+}
+
+// 📌 Обновление фото с новыми комментариями
+function saveUpdatedPhoto(photoData, year) {
+    const transaction = db.transaction("photos", "readwrite");
+    const store = transaction.objectStore("photos");
+
+    store.put(photoData);
+}
+
+// 📌 Закрытие модального окна
+function closeModal() {
+    document.getElementById("photo-modal").style.display = "none";
+}
+
+// 📌 Массовая загрузка фото
 function uploadPhoto() {
     const input = document.getElementById("photoUpload");
     if (input.files.length === 0) {
@@ -96,7 +130,6 @@ function uploadPhoto() {
             savePhoto(selectedYear, e.target.result);
             loadedCount++;
 
-            // Показываем галерею только когда все фото загружены
             if (loadedCount === input.files.length) {
                 alert(`Завантажено ${loadedCount} фото!`);
                 showGallery(selectedYear);
@@ -107,33 +140,5 @@ function uploadPhoto() {
     }
 }
 
-// 📌 Функция добавления комментариев к фото
-function addComment(img, year, index) {
-    const commentBox = document.createElement("div");
-    commentBox.classList.add("comment-box");
-
-    const input = document.createElement("input");
-    input.type = "text";
-    input.placeholder = "Ваш коментар...";
-    
-    const button = document.createElement("button");
-    button.innerText = "Додати";
-    button.onclick = () => {
-        alert(`Коментар додано до фото ${index + 1} (${year} рік): ${input.value}`);
-        commentBox.remove();
-    };
-
-    commentBox.appendChild(input);
-    commentBox.appendChild(button);
-    
-    img.parentElement.appendChild(commentBox);
-}
-
-// 📌 Показываем список годов с 1990 по 2024
-function toggleYears() {
-    const extraYears = document.getElementById("extra-years");
-    extraYears.classList.toggle("hidden");
-}
-
-// 📌 Инициализируем базу данных при загрузке страницы
+// 📌 Инициализируем базу при загрузке страницы
 initDB();
