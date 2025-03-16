@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ОПІ АЕФ-87 - Фотогалерея</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="script.js"></script>
+</head>
+<body>
+
+    <header>
+        <h1>ОПІ АЕФ-87 - Зустрічі випускників</h1>
+    </header>
+
+    <main>
+        <div class="years">
+            <button onclick="showGallery('2024')">2024</button>
+            <button onclick="showGallery('2023')">2023</button>
+            <button onclick="showGallery('2022')">2022</button>
+        </div>
+
+        <div id="gallery-container">
+            <h2>Оберіть рік зустрічі</h2>
+        </div>
+
+        <div class="upload-section">
+            <h3>Завантажити фото</h3>
+            <input type="file" id="photoUpload" accept="image/*">
+            <button onclick="uploadPhoto()">Завантажити</button>
+        </div>
+    </main>
+
+</body>
+</html>
