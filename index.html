@@ -15,9 +15,19 @@
 
     <main>
         <div class="years">
+            <button onclick="showGallery('1982-1987')">1982-1987</button>
             <button onclick="showGallery('2024')">2024</button>
             <button onclick="showGallery('2023')">2023</button>
             <button onclick="showGallery('2022')">2022</button>
+            <button onclick="toggleYears()">▼ Роки з 1990 ▼</button>
+        </div>
+
+        <div id="extra-years" class="hidden">
+            <script>
+                for (let year = 1990; year <= 2021; year++) {
+                    document.write(`<button onclick="showGallery('${year}')">${year}</button>`);
+                }
+            </script>
         </div>
 
         <div id="gallery-container">
