@@ -1,13 +1,13 @@
 body {
     font-family: Arial, sans-serif;
-    background: url('https://upload.wikimedia.org/wikipedia/commons/3/3b/Odessa_Port_Panorama.jpg') no-repeat center top;
+    background: url('https://upload.wikimedia.org/wikipedia/commons/d/d6/Odessa-Primorsky_Boulevard.jpg') no-repeat center center fixed;
     background-size: cover;
     text-align: center;
     color: #333;
 }
 
 header {
-    background: #0066cc;
+    background: rgba(0, 102, 204, 0.9);
     color: white;
     padding: 15px;
     font-size: 24px;
@@ -29,14 +29,6 @@ header {
 
 .years button:hover {
     background: #005f99;
-}
-
-#extra-years {
-    margin: 10px;
-}
-
-.hidden {
-    display: none;
 }
 
 #gallery-container {
@@ -99,3 +91,4 @@ header {
     border-radius: 5px;
     text-align: center;
 }
+
