@@ -1,8 +1,7 @@
-const galleryData = {
-    "2024": ["https://via.placeholder.com/200", "https://via.placeholder.com/200"],
-    "2023": ["https://via.placeholder.com/200"],
-    "2022": ["https://via.placeholder.com/200", "https://via.placeholder.com/200"]
-};
+function toggleYears() {
+    const extraYears = document.getElementById("extra-years");
+    extraYears.classList.toggle("hidden");
+}
 
 function showGallery(year) {
     const container = document.getElementById("gallery-container");
@@ -10,13 +9,39 @@ function showGallery(year) {
 
     const galleryDiv = container.querySelector(".gallery");
 
-    galleryData[year].forEach((src, index) => {
+    const storedPhotos = JSON.parse(localStorage.getItem(`photos_${year}`)) || [];
+
+    storedPhotos.forEach((src, index) => {
         const img = document.createElement("img");
         img.src = src;
         img.alt = `Фото ${index + 1}`;
         img.onclick = () => addComment(img, year, index);
         galleryDiv.appendChild(img);
     });
+}
+
+function uploadPhoto() {
+    const input = document.getElementById("photoUpload");
+    if (input.files.length > 0) {
+        const file = input.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            const selectedYear = prompt("Введіть рік зустрічі (наприклад, 2024 або 1982-1987):");
+            if (!selectedYear) return;
+
+            let storedPhotos = JSON.parse(localStorage.getItem(`photos_${selectedYear}`)) || [];
+            storedPhotos.push(e.target.result);
+            localStorage.setItem(`photos_${selectedYear}`, JSON.stringify(storedPhotos));
+
+            alert("Фото успішно завантажене!");
+            showGallery(selectedYear);
+        };
+
+        reader.readAsDataURL(file);
+    } else {
+        alert("Будь ласка, оберіть фото.");
+    }
 }
 
 function addComment(img, year, index) {
@@ -38,13 +63,4 @@ function addComment(img, year, index) {
     commentBox.appendChild(button);
     
     img.parentElement.appendChild(commentBox);
-}
-
-function uploadPhoto() {
-    const input = document.getElementById("photoUpload");
-    if (input.files.length > 0) {
-        alert("Фото успішно завантажене!");
-    } else {
-        alert("Будь ласка, оберіть фото.");
-    }
 }
