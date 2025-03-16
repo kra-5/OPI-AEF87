@@ -40,6 +40,19 @@
             <button onclick="uploadPhoto()">Завантажити</button>
         </div>
 
+        <!-- Модальное окно для просмотра фото -->
+        <div id="photo-modal" class="modal">
+            span class="close" onclick="closeModal()">&times;</span>
+            <img class="modal-content" id="modal-img">
+            div class="comment-section">
+                <h3>Коментарі</h3>
+                <ul id="comment-list"></ul>
+                <input type="text" id="comment-input" placeholder="Напишіть коментар...">
+                <button id="add-comment-btn">Додати</button>
+            </div>
+        </div>
+
+        
     </main>
 
 </body>
