@@ -1,6 +1,6 @@
 let db;
 
-// 📌 Функция инициализации IndexedDB
+// 📌 Инициализация базы данных IndexedDB
 function initDB(callback) {
     const request = indexedDB.open("photoGalleryDB", 1);
 
@@ -17,32 +17,38 @@ function initDB(callback) {
     };
 
     request.onerror = function (event) {
-        console.error("IndexedDB error:", event.target.error);
+        console.error("Ошибка IndexedDB:", event.target.error);
     };
 }
 
-// 📌 Функция раскрытия списка годов
-function toggleYears() {
-    const extraYears = document.getElementById("extra-years");
-    if (extraYears.style.display === "none" || extraYears.style.display === "") {
-        extraYears.style.display = "block";
-    } else {
-        extraYears.style.display = "none";
-    }
+// 📌 Сохранение фото в IndexedDB
+function savePhoto(year, photo, callback) {
+    if (!db) return;
+
+    const transaction = db.transaction("photos", "readwrite");
+    const store = transaction.objectStore("photos");
+    store.add({ year: year, photo: photo, comments: [] });
+
+    transaction.oncomplete = function () {
+        if (callback) callback();
+    };
 }
 
-// 📌 Добавляем кнопки с 1990 по 2021
-window.onload = function () {
-    const extraYearsDiv = document.getElementById("extra-years");
-    for (let year = 1990; year <= 2021; year++) {
-        const button = document.createElement("button");
-        button.textContent = year;
-        button.onclick = () => showGallery(year);
-        extraYearsDiv.appendChild(button);
-    }
-};
+// 📌 Загрузка фото из IndexedDB
+function loadPhotos(year, callback) {
+    if (!db) return;
 
-// 📌 Показываем галерею с фото
+    const transaction = db.transaction("photos", "readonly");
+    const store = transaction.objectStore("photos");
+    const request = store.getAll();
+
+    request.onsuccess = function () {
+        const photos = request.result.filter(p => p.year === year);
+        callback(photos);
+    };
+}
+
+// 📌 Отображение галереи
 function showGallery(year) {
     if (!db) return;
 
@@ -84,10 +90,11 @@ function openModal(photoData, year) {
         const newComment = commentInput.value.trim();
         if (newComment) {
             photoData.comments.push(newComment);
-            saveUpdatedPhoto(photoData, year);
-            showGallery(year);
+            savePhoto(year, photoData.photo, () => {
+                showGallery(year);
+                openModal(photoData, year);
+            });
             commentInput.value = "";
-            openModal(photoData, year);
         }
     };
 }
@@ -97,5 +104,36 @@ function closeModal() {
     document.getElementById("photo-modal").style.display = "none";
 }
 
-// 📌 Инициализируем базу данных при загрузке
+// 📌 Массовая загрузка фото
+function uploadPhoto() {
+    const input = document.getElementById("photoUpload");
+    if (input.files.length === 0) {
+        alert("Будь ласка, оберіть фото.");
+        return;
+    }
+
+    const selectedYear = prompt("Введіть рік зустрічі (наприклад, 2024 або 1982-1987):");
+    if (!selectedYear) return;
+
+    let loadedCount = 0;
+
+    for (let i = 0; i < input.files.length; i++) {
+        const file = input.files[i];
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            savePhoto(selectedYear, e.target.result, () => {
+                loadedCount++;
+                if (loadedCount === input.files.length) {
+                    alert(`Завантажено ${loadedCount} фото!`);
+                    showGallery(selectedYear);
+                }
+            });
+        };
+
+        reader.readAsDataURL(file);
+    }
+}
+
+// 📌 Запускаем базу данных при загрузке
 initDB();
