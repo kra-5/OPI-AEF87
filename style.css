@@ -48,12 +48,6 @@ header {
     border-radius: 10px;
 }
 
-.gallery {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
 .gallery img {
     width: 200px;
     height: 150px;
@@ -67,22 +61,7 @@ header {
     transform: scale(1.1);
 }
 
-.upload-section {
-    background: white;
-    padding: 20px;
-    margin: 20px;
-    border-radius: 8px;
-    box-shadow: 0px 0px 10px gray;
-}
-
-.comment-box {
-    margin-top: 10px;
-}
-
-.comment-box input {
-    width: 80%;
-    padding: 5px;
-}
+/* Модальное окно */
 .modal {
     display: none;
     position: fixed;
@@ -119,23 +98,4 @@ header {
     width: 50%;
     border-radius: 5px;
     text-align: center;
-}
-
-.comment-section input {
-    width: 80%;
-    padding: 5px;
-    margin-top: 10px;
-}
-
-.comment-section button {
-    padding: 5px 10px;
-    background: #0088cc;
-    color: white;
-    border: none;
-    cursor: pointer;
-    margin-top: 5px;
-}
-
-.comment-section button:hover {
-    background: #005f99;
 }
