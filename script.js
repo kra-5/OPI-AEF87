@@ -13,6 +13,7 @@ function initDB(callback) {
 
     request.onsuccess = function (event) {
         db = event.target.result;
+        console.log("IndexedDB готова!");
         if (callback) callback();
     };
 
@@ -21,7 +22,7 @@ function initDB(callback) {
     };
 }
 
-// 📌 Сохранение фото в IndexedDB и обновление галереи
+// 📌 Сохранение фото в IndexedDB
 function savePhoto(year, photo, callback) {
     if (!db) return;
 
@@ -32,6 +33,10 @@ function savePhoto(year, photo, callback) {
     transaction.oncomplete = function () {
         console.log(`Фото добавлено в ${year}`);
         if (callback) callback();
+    };
+
+    transaction.onerror = function (event) {
+        console.error("Ошибка сохранения фото:", event.target.error);
     };
 }
 
@@ -47,11 +52,18 @@ function loadPhotos(year, callback) {
         const photos = request.result.filter(p => p.year === year);
         callback(photos);
     };
+
+    request.onerror = function (event) {
+        console.error("Ошибка загрузки фото:", event.target.error);
+    };
 }
 
-// 📌 Отображение галереи
+// 📌 Отображение галереи (теперь загружаются старые фото)
 function showGallery(year) {
-    if (!db) return;
+    if (!db) {
+        console.error("База данных еще не загружена");
+        return;
+    }
 
     const container = document.getElementById("gallery-container");
     container.innerHTML = `<h2>Фото зустрічі ${year} року</h2><div class="gallery"></div>`;
@@ -94,10 +106,9 @@ function openModal(photoData, year) {
         const newComment = commentInput.value.trim();
         if (newComment) {
             photoData.comments.push(newComment);
-            savePhoto(year, photoData.photo, () => {
-                showGallery(year);
-                openModal(photoData, year);
-            });
+            saveUpdatedPhoto(photoData, year);
+            showGallery(year);
+            openModal(photoData, year);
             commentInput.value = "";
         }
     };
@@ -147,13 +158,15 @@ function toggleYears() {
 
 // 📌 Автоматически создаём кнопки годов
 window.onload = function () {
-    const extraYearsDiv = document.getElementById("extra-years");
-    for (let year = 1990; year <= new Date().getFullYear(); year++) {
-        const button = document.createElement("button");
-        button.textContent = year;
-        button.onclick = () => showGallery(year);
-        extraYearsDiv.appendChild(button);
-    }
+    initDB(() => {
+        const extraYearsDiv = document.getElementById("extra-years");
+        for (let year = 1990; year <= new Date().getFullYear(); year++) {
+            const button = document.createElement("button");
+            button.textContent = year;
+            button.onclick = () => showGallery(year);
+            extraYearsDiv.appendChild(button);
+        }
+    });
 };
 
 // 📌 Запускаем базу данных при загрузке
