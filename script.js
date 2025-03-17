@@ -1,4 +1,5 @@
 let db;
+const IMGUR_CLIENT_ID = "your-client-id"; // 🔹 Замените на свой ID с https://api.imgur.com/oauth2/addclient
 
 // 📌 Инициализация базы данных IndexedDB
 function initDB(callback) {
@@ -22,16 +23,16 @@ function initDB(callback) {
     };
 }
 
-// 📌 Сохранение фото в IndexedDB
-function savePhoto(year, photo, callback) {
+// 📌 Сохранение ссылки на фото в IndexedDB
+function savePhoto(year, photoUrl, callback) {
     if (!db) return;
 
     const transaction = db.transaction("photos", "readwrite");
     const store = transaction.objectStore("photos");
-    store.add({ year: year, photo: photo, comments: [] });
+    store.add({ year: year, photo: photoUrl, comments: [] });
 
     transaction.oncomplete = function () {
-        console.log(`Фото добавлено в ${year}`);
+        console.log(`Фото сохранено: ${photoUrl}`);
         if (callback) callback();
     };
 
@@ -52,30 +53,9 @@ function loadPhotos(year, callback) {
         const photos = request.result.filter(p => p.year === year);
         callback(photos);
     };
-
-    request.onerror = function (event) {
-        console.error("Ошибка загрузки фото:", event.target.error);
-    };
 }
 
-// 📌 Функция загрузки фото при старте сайта (чтобы фото не исчезали)
-function loadPhotosOnStart() {
-    if (!db) return;
-
-    const transaction = db.transaction("photos", "readonly");
-    const store = transaction.objectStore("photos");
-    const request = store.getAll();
-
-    request.onsuccess = function () {
-        const photos = request.result;
-        if (photos.length > 0) {
-            const lastYear = photos[photos.length - 1].year;
-            showGallery(lastYear); // Показываем последний загруженный год
-        }
-    };
-}
-
-// 📌 Отображение галереи (Теперь фото загружаются после обновления страницы)
+// 📌 Отображение галереи
 function showGallery(year) {
     if (!db) {
         console.error("База данных еще не загружена");
@@ -137,7 +117,7 @@ function closeModal() {
     document.getElementById("photo-modal").style.display = "none";
 }
 
-// 📌 Массовая загрузка фото
+// 📌 Массовая загрузка фото (на Imgur)
 function uploadPhoto() {
     const input = document.getElementById("photoUpload");
     if (input.files.length === 0) {
@@ -152,20 +132,43 @@ function uploadPhoto() {
 
     for (let i = 0; i < input.files.length; i++) {
         const file = input.files[i];
-        const reader = new FileReader();
-
-        reader.onload = function (e) {
-            savePhoto(selectedYear, e.target.result, () => {
+        uploadToImgur(file, function (imgUrl) {
+            savePhoto(selectedYear, imgUrl, () => {
                 loadedCount++;
                 if (loadedCount === input.files.length) {
                     alert(`Завантажено ${loadedCount} фото!`);
                     showGallery(selectedYear);
                 }
             });
-        };
-
-        reader.readAsDataURL(file);
+        });
     }
+}
+
+// 📌 Загрузка фото на Imgur
+function uploadToImgur(file, callback) {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function () {
+        const formData = new FormData();
+        formData.append("image", reader.result.split(",")[1]);
+
+        fetch("https://api.imgur.com/3/image", {
+            method: "POST",
+            headers: {
+                Authorization: `Client-ID ${441e221ed4af46a}`,
+            },
+            body: formData,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    callback(data.data.link);
+                } else {
+                    alert("Ошибка загрузки на Imgur");
+                }
+            })
+            .catch((error) => console.error("Ошибка Imgur:", error));
+    };
 }
 
 // 📌 Функция раскрытия списка годов
@@ -184,7 +187,6 @@ window.onload = function () {
             button.onclick = () => showGallery(year);
             extraYearsDiv.appendChild(button);
         }
-        loadPhotosOnStart(); // 📌 Загружаем сохранённые фото после загрузки сайта!
     });
 };
 
