@@ -58,7 +58,24 @@ function loadPhotos(year, callback) {
     };
 }
 
-// 📌 Отображение галереи (теперь загружаются старые фото)
+// 📌 Функция загрузки фото при старте сайта (чтобы фото не исчезали)
+function loadPhotosOnStart() {
+    if (!db) return;
+
+    const transaction = db.transaction("photos", "readonly");
+    const store = transaction.objectStore("photos");
+    const request = store.getAll();
+
+    request.onsuccess = function () {
+        const photos = request.result;
+        if (photos.length > 0) {
+            const lastYear = photos[photos.length - 1].year;
+            showGallery(lastYear); // Показываем последний загруженный год
+        }
+    };
+}
+
+// 📌 Отображение галереи (Теперь фото загружаются после обновления страницы)
 function showGallery(year) {
     if (!db) {
         console.error("База данных еще не загружена");
@@ -106,9 +123,10 @@ function openModal(photoData, year) {
         const newComment = commentInput.value.trim();
         if (newComment) {
             photoData.comments.push(newComment);
-            saveUpdatedPhoto(photoData, year);
-            showGallery(year);
-            openModal(photoData, year);
+            savePhoto(year, photoData.photo, () => {
+                showGallery(year);
+                openModal(photoData, year);
+            });
             commentInput.value = "";
         }
     };
@@ -166,6 +184,7 @@ window.onload = function () {
             button.onclick = () => showGallery(year);
             extraYearsDiv.appendChild(button);
         }
+        loadPhotosOnStart(); // 📌 Загружаем сохранённые фото после загрузки сайта!
     });
 };
 
